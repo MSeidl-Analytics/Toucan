@@ -29,7 +29,7 @@ class LeaderboardResponse(BaseModel):
         }
 
 ### Database stuff ###############################
-engine = sqlalchemy.create_engine(f'mssql+pymssql://web3_admin:{sql_pw}@dev-web3.database.windows.net/sap')
+engine = sqlalchemy.create_engine(f'mssql+pymssql://web3_read:{sql_pw}@dev-web3.database.windows.net/sap')
 
 def get_leaderboard():
     exec_string = f"""with temp as(
