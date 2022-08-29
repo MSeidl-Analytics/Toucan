@@ -1,3 +1,10 @@
-pandas
+pymssql
+fastapi==0.80.0
+numpy==1.22.3
+pandas==1.4.2
+pydantic==1.9.1
+SQLAlchemy==1.4.36
+urllib3==1.26.9
+gunicorn
+uvicorn
 web3
-sqlalchemy
