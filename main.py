@@ -23,8 +23,8 @@ class LeaderboardResponse(BaseModel):
         #orm_mode = True
         schema_extra = {
             "example": {
-                "users": ["2022-08-01","2022-08-02","2022-08-04","2022-08-05"],
-                "retired_nct": [6.5, 5.7, 4.3, 3.4, 2.0]
+                "users": ["0x02692494f9eb7eb1967510237bdcf821fa646ce2","0xc05a33b9e3b1fbc1ef480cf701bfd11ed53eb0bc","tableland.eth"],
+                "retired_nct": [4924.5, 4451.7, 4301.3]
             }
         }
 
