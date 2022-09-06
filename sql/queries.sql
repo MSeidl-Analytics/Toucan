@@ -4,7 +4,7 @@ with temp as(
     WHERE toAddress = '0x0000000000000000000000000000000000000000'
     GROUP BY fromAddress
 )
-SELECT COALESCE(ens, "user") as 'user', retiredNCT
+SELECT TOP 20 COALESCE(ens, "user") as 'user', retiredNCT
 FROM temp nct
 LEFT JOIN toucan_ens ens ON nct."user" = ens.address
 ORDER BY retiredNCT DESC
