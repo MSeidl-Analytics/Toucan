@@ -31,6 +31,17 @@ class LeaderboardResponse(BaseModel):
             }
         }
 
+class ContractsResponse(BaseModel):
+    contracts: list[str]
+
+    class Config:
+        #orm_mode = True
+        schema_extra = {
+            "example": {
+                "contracts": ["0xe47838cb5874da9b8a40107abbf4edf75a7e7ba0","0x463de2a5c6e8bb0c87f4aa80a02689e6680f72c7","0x3b28baae3987502b436f6f37d1bcd7b87b517b27"]
+            }
+        }
+
 ### Database stuff ###############################
 url = f"mysql+pymysql://{db_user}:{db_passwd}@{db_host}/{db_name}"
 engine = sqlalchemy.create_engine(url, connect_args={"ssl":{"ssl_ca":"/etc/ssl/cacert.pem"}})
@@ -84,11 +95,26 @@ def get_leaderboard_filtered(q_type:str, year:int=None, quarter:int=None, month:
     output_dict = df.to_dict(orient='index')
 
     return output_dict
+
+def get_nct_contracts_data():
+    
+    exec_string = f"""
+        SELECT token_id FROM t_nct_contracts
+    """
+    
+    df = pd.read_sql(exec_string, engine.connect())
+    contracts = df['token_id'].to_list()
+
+    return ContractsResponse(contracts=contracts)
 ######################################################################
 
 tags_metadata = [
     {
         "name": "leaderboard",
+        "description": "Data, data, data"
+    },
+    {
+        "name": "misc",
         "description": "Data, data, data"
     },
     {
@@ -135,3 +161,7 @@ async def leaderboard_quarterly(quarter: int = Path(title="quarter of year", ge=
 @app.get("/yearly/{year}", tags=['leaderboard'])
 async def leaderboard_yearly(year: int = Path(title="Year", ge=2022, le=2025) ):
     return get_leaderboard_filtered(q_type='yearly', year=year)
+
+@app.get("/nct_contracts", response_model= ContractsResponse, tags=['misc'])
+async def get_nct_contracts():
+    return get_nct_contracts_data()
