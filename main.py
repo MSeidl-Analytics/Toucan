@@ -36,13 +36,15 @@ url = f"mysql+pymysql://{db_user}:{db_passwd}@{db_host}/{db_name}"
 engine = sqlalchemy.create_engine(url, connect_args={"ssl":{"ssl_ca":"/etc/ssl/cacert.pem"}})
 
 def get_leaderboard():
-    exec_string = f"""SELECT COALESCE(u.uname, e.ens, nct.leaderboard_beneficiary) as beneficiary, sum(nct.amount) as retired_nct, Count(*) as tx_counter 
-        FROM t_nct_retired nct
-        LEFT JOIN t_ens e ON nct.leaderboard_beneficiary = e.address
-        LEFT JOIN t_users u ON nct.leaderboard_beneficiary = u.wallet_pub 
-        GROUP BY 1
-        ORDER BY retired_nct DESC
-        LIMIT 20;"""
+    exec_string = f"""
+        SELECT COALESCE(u.uname, e.ens, nct.leaderboard_beneficiary) as beneficiary, sum(nct.amount) as retired_nct, Count(*) as tx_counter 
+            FROM t_nct_retired nct
+            LEFT JOIN t_ens e ON nct.leaderboard_beneficiary = e.address
+            LEFT JOIN t_users u ON nct.leaderboard_beneficiary = u.wallet_pub 
+            GROUP BY 1
+            ORDER BY retired_nct DESC
+            LIMIT 20;
+    """
     
     df = pd.read_sql(exec_string, engine.connect())
 
@@ -62,25 +64,26 @@ def get_leaderboard_filtered(q_type:str, year:int=None, quarter:int=None, month:
     
     exec_string = f"""
         SELECT 
-            COALESCE(u.uname, e.ens, nct.leaderboard_beneficiary) as beneficiary
+        	COALESCE(u.uname, e.ens, nct.leaderboard_beneficiary) as beneficiary
+            ,nct.leaderboard_beneficiary as wallet
+            ,u.twitter 
             ,SUM(nct.amount) as retired_nct
             ,COUNT(*) as tx_counter 
         FROM t_nct_retired nct
         LEFT JOIN t_ens e ON nct.leaderboard_beneficiary = e.address
         LEFT JOIN t_users u ON nct.leaderboard_beneficiary = u.wallet_pub 
         {q_where}
-        GROUP BY 1
+        GROUP BY 1,2,3
         ORDER BY retired_nct DESC
         LIMIT 20;
     """
     
     df = pd.read_sql(exec_string, engine.connect())
+    df['rank'] = df['retired_nct'].rank(axis=0, method='first', ascending=False).astype('int')
+    df.set_index('rank', inplace=True)
+    output_dict = df.to_dict(orient='index')
 
-    users = df['beneficiary'].to_list()
-    retired_nct = df['retired_nct'].to_list()
-
-    leaderboard_response = LeaderboardResponse(users= users, retired_nct= retired_nct)
-    return leaderboard_response
+    return output_dict
 ######################################################################
 
 tags_metadata = [
@@ -121,14 +124,14 @@ app.add_middleware(
 async def get_path():
     return get_leaderboard()
 
-@app.get("/monthly/{year}/{month}", response_model= LeaderboardResponse, tags=['leaderboard'])
+@app.get("/monthly/{year}/{month}", tags=['leaderboard'])
 async def leaderboard_monthly(month: int = Path(title="month of year", ge=1, le=12), year: int = Path(title="Year", ge=2022, le=2025) ):
     return get_leaderboard_filtered(q_type='monthly', year=year, month=month)
 
-@app.get("/quarterly/{year}/{quarter}", response_model= LeaderboardResponse, tags=['leaderboard'])
+@app.get("/quarterly/{year}/{quarter}", tags=['leaderboard'])
 async def leaderboard_quarterly(quarter: int = Path(title="quarter of year", ge=1, le=4), year: int = Path(title="Year", ge=2022, le=2025) ):
     return get_leaderboard_filtered(q_type='quarterly', year=year, quarter=quarter)
 
-@app.get("/yearly/{year}", response_model= LeaderboardResponse, tags=['leaderboard'])
+@app.get("/yearly/{year}", tags=['leaderboard'])
 async def leaderboard_yearly(year: int = Path(title="Year", ge=2022, le=2025) ):
     return get_leaderboard_filtered(q_type='yearly', year=year)
