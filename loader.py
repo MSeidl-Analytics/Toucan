@@ -1,14 +1,12 @@
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-from dotenv import load_dotenv
-load_dotenv() 
-import os
-alchemy_key = os.getenv("ALCHEMY")
-db_user = os.getenv("DB_USERNAME")
-db_passwd = os.getenv("DB_PASSWORD")
-db_host = os.getenv("DB_HOST")
-db_name = os.getenv("DB_DATABASE")
+import keyring
+alchemy_key = keyring.get_password("ALCHEMY", "none")
+db_user = keyring.get_password("DB_USERNAME", "none")
+db_passwd = keyring.get_password("DB_PASSWORD", "none")
+db_host = keyring.get_password("DB_HOST", "none")
+db_name = keyring.get_password("DB_DATABASE", "none")
 
 from requests.adapters import Retry
 import urllib3
