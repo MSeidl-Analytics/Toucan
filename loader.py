@@ -155,7 +155,7 @@ class loader:
 
     def db_update_nct_contracts(self):
         df = self.get_nct_contracts()
-        if type(df) != NoneType:
+        if type(df) == pd.DataFrame:
             #df.to_sql(name='t_nct_contracts', con=self.engine, if_exists='replace', index=False, chunksize=10000)
             df.set_index('token_id', inplace=True)
             upsert(con=self.engine,
@@ -167,7 +167,7 @@ class loader:
 
     def db_update_nct_retirements(self):
         df = self.get_nct_retirements()
-        if type(df) != NoneType:
+        if type(df) == pd.DataFrame:
             df.set_index('id', inplace=True)
             upsert(con=self.engine,
                 df=df,
@@ -197,7 +197,7 @@ class loader:
 
     def run(self):
         ## update nct retirements every 10s
-        ## update ens mappings and nct contracts every 10 minutes
+        ## update ens mappings and nct contracts every 60 minutes
         counter = 0
         while True:
             self.db_update_nct_retirements()
@@ -205,7 +205,7 @@ class loader:
             counter += 1
             time.sleep(10)
 
-            if counter == 60:
+            if counter == 360:
                 self.db_update_nct_contracts()
                 print(f'nct contracts updated - {datetime.now()}')
                 self.db_update_ens()
